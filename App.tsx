@@ -8,12 +8,14 @@ import VehicleHistory from './components/VehicleHistory';
 import VehicleData from './components/VehicleData';
 import Summary from './components/Summary';
 import Login from './components/Login';
-import Home from './components/Home'; // Import the new Home component
-import { VehicleLog, AppView, Vehicle, VehicleStatus } from './types';
+import Home from './components/Home';
+import Settings from './components/Settings'; // Import the new Settings component
+import { VehicleLog, AppView, Vehicle, VehicleStatus, User } from './types';
 import { BackArrowIcon } from './components/icons';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<AppView>('home');
   
   // State for vehicle logs
@@ -21,7 +23,6 @@ const App: React.FC = () => {
     try {
       const savedLogs = localStorage.getItem('vehicleLogs');
       const parsedLogs = savedLogs ? JSON.parse(savedLogs) : [];
-       // Deserialize dates and ensure a clean structure for forward/backward compatibility
       return parsedLogs.map((log: any) => ({
         id: log.id,
         licensePlate: log.licensePlate,
@@ -55,6 +56,21 @@ const App: React.FC = () => {
     }
   });
 
+  // State for users
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+        const savedUsers = localStorage.getItem('users');
+        if (savedUsers) {
+            return JSON.parse(savedUsers);
+        }
+        // Default admin user if no users are saved
+        return [{ id: 'default-admin', username: 'admin', password: 'admin' }];
+    } catch (error) {
+        console.error("Failed to parse users from localStorage", error);
+        return [{ id: 'default-admin', username: 'admin', password: 'admin' }];
+    }
+  });
+
   useEffect(() => {
     localStorage.setItem('vehicleLogs', JSON.stringify(vehicleLogs));
   }, [vehicleLogs]);
@@ -62,11 +78,17 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('masterVehicles', JSON.stringify(vehicles));
   }, [vehicles]);
+  
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
 
   const handleLogin = (username: string, password: string):boolean => {
-    if (username === 'admin' && password === 'admin') {
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
       setIsAuthenticated(true);
-      setCurrentView('home'); // Go to home on login
+      setCurrentUser(user);
+      setCurrentView('home');
       return true;
     }
     return false;
@@ -74,7 +96,47 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setCurrentUser(null);
   };
+
+  // User Management Handlers
+  const handleAddUser = (user: Omit<User, 'id'>): boolean => {
+    if (users.some(u => u.username.toLowerCase() === user.username.toLowerCase().trim())) {
+      alert(`Username "${user.username}" sudah ada.`);
+      return false;
+    }
+    const newUser: User = { ...user, id: new Date().toISOString(), username: user.username.trim() };
+    setUsers(prev => [...prev, newUser]);
+    return true;
+  };
+
+  const handleUpdateUser = (updatedUser: User): boolean => {
+    if (users.some(u => u.username.toLowerCase() === updatedUser.username.toLowerCase().trim() && u.id !== updatedUser.id)) {
+      alert(`Username "${updatedUser.username}" sudah ada.`);
+      return false;
+    }
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? { ...updatedUser, username: updatedUser.username.trim() } : u));
+    return true;
+  };
+
+  const handleDeleteUser = (id: string) => {
+    const userToDelete = users.find(u => u.id === id);
+    if (!userToDelete) return;
+
+    if (userToDelete.username === 'admin') {
+      alert("Akun admin tidak dapat dihapus.");
+      return;
+    }
+    if (userToDelete.id === currentUser?.id) {
+      alert("Anda tidak dapat menghapus akun Anda sendiri.");
+      return;
+    }
+
+    if (window.confirm(`Apakah Anda yakin ingin menghapus pengguna "${userToDelete.username}"?`)) {
+        setUsers(prev => prev.filter(u => u.id !== id));
+    }
+  };
+
 
   if (!isAuthenticated) {
     return <Login onLoginSuccess={handleLogin} />;
@@ -186,7 +248,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case 'home':
-        return <Home onNavigate={setCurrentView} />;
+        return <Home onNavigate={setCurrentView} currentUser={currentUser} />;
       case 'inventory':
         return (
           <div>
@@ -236,14 +298,37 @@ const App: React.FC = () => {
             />
           </div>
         );
+       case 'settings':
+         if (currentUser?.username !== 'admin') {
+           return <Home onNavigate={setCurrentView} currentUser={currentUser} />; // Redirect if not admin
+         }
+        return (
+           <div>
+            <button
+              onClick={() => setCurrentView('home')}
+              className="flex items-center mb-6 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+              aria-label="Kembali ke menu utama"
+            >
+              <BackArrowIcon className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
+              <span>Kembali ke Menu Utama</span>
+            </button>
+            <Settings 
+                users={users}
+                currentUser={currentUser}
+                onAddUser={handleAddUser}
+                onUpdateUser={handleUpdateUser}
+                onDeleteUser={handleDeleteUser}
+            />
+          </div>
+        );
       default:
-        return <Home onNavigate={setCurrentView} />;
+        return <Home onNavigate={setCurrentView} currentUser={currentUser} />;
     }
   };
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col font-sans">
-      <Header setCurrentView={setCurrentView} onLogout={handleLogout} currentView={currentView} />
+      <Header setCurrentView={setCurrentView} onLogout={handleLogout} currentView={currentView} currentUser={currentUser}/>
       <main className="flex-grow container mx-auto px-4 md:px-6 py-8">
         {renderContent()}
       </main>

@@ -96,7 +96,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
         </form>
          <div className="text-center text-xs text-gray-400 dark:text-gray-500 pt-4">
-            <p>Gunakan username: <b>admin</b> & password: <b>admin</b></p>
+            <p>Login dengan akun yang telah didaftarkan oleh admin.</p>
         </div>
       </div>
     </div>

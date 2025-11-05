@@ -1,52 +1,88 @@
 import React from 'react';
-import { AppView } from '../types';
-import { ClipboardListIcon, TruckIcon } from './icons';
+import { AppView, User } from '../types';
+import { ClipboardListIcon, TruckIcon, SettingsIcon } from './icons';
 
 interface HomeProps {
   onNavigate: (view: AppView) => void;
+  currentUser: User | null;
 }
 
-const Home: React.FC<HomeProps> = ({ onNavigate }) => {
+const Home: React.FC<HomeProps> = ({ onNavigate, currentUser }) => {
+
+  const NavCard: React.FC<{
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    onClick: () => void;
+    color: 'blue' | 'green' | 'purple';
+  }> = ({ title, description, icon, onClick, color }) => {
+    const colorClasses = {
+      blue: {
+        bg: 'bg-blue-100 dark:bg-blue-900/50',
+        groupHoverBg: 'group-hover:bg-blue-200 dark:group-hover:bg-blue-900',
+        text: 'text-blue-600 dark:text-blue-400'
+      },
+      green: {
+        bg: 'bg-green-100 dark:bg-green-900/50',
+        groupHoverBg: 'group-hover:bg-green-200 dark:group-hover:bg-green-900',
+        text: 'text-green-600 dark:text-green-400'
+      },
+      purple: {
+        bg: 'bg-purple-100 dark:bg-purple-900/50',
+        groupHoverBg: 'group-hover:bg-purple-200 dark:group-hover:bg-purple-900',
+        text: 'text-purple-600 dark:text-purple-400'
+      }
+    };
+    
+    const selectedColor = colorClasses[color];
+
+    return (
+      <div
+        onClick={onClick}
+        className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 cursor-pointer transform hover:-translate-y-2 transition-all duration-300"
+        role="button"
+      >
+        <div className="flex justify-center mb-6">
+          <div className={`${selectedColor.bg} p-5 rounded-full ${selectedColor.groupHoverBg} transition-colors`}>
+            {React.cloneElement(icon as React.ReactElement, { className: `w-12 h-12 ${selectedColor.text}` })}
+          </div>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">{title}</h2>
+        <p className="text-gray-500 dark:text-gray-400">{description}</p>
+      </div>
+    );
+  };
+
   return (
     <div className="text-center">
-      <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">Selamat Datang, Admin!</h1>
+      <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">Selamat Datang, {currentUser?.username}!</h1>
       <p className="text-lg text-gray-600 dark:text-gray-400 mb-12">
         Pilih menu di bawah ini untuk memulai.
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        {/* Card for Inventory */}
-        <div
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <NavCard
+          title="Input Kendaraan"
+          description="Catat kendaraan keluar/masuk, lihat kendaraan dalam perjalanan, dan kelola riwayat."
+          icon={<ClipboardListIcon />}
           onClick={() => onNavigate('inventory')}
-          className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 cursor-pointer transform hover:-translate-y-2 transition-all duration-300"
-          role="button"
-        >
-          <div className="flex justify-center mb-6">
-            <div className="bg-blue-100 dark:bg-blue-900/50 p-5 rounded-full group-hover:bg-blue-200 dark:group-hover:bg-blue-900 transition-colors">
-              <ClipboardListIcon className="w-12 h-12 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Input Kendaraan</h2>
-          <p className="text-gray-500 dark:text-gray-400">
-            Catat kendaraan yang keluar dan masuk, lihat daftar kendaraan yang sedang dalam perjalanan, dan kelola riwayat perjalanan.
-          </p>
-        </div>
-
-        {/* Card for Vehicle Data */}
-        <div
+          color="blue"
+        />
+        <NavCard
+          title="Data Kendaraan"
+          description="Kelola data master semua kendaraan, termasuk sopir, cabang, dan status."
+          icon={<TruckIcon />}
           onClick={() => onNavigate('vehicleData')}
-          className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 cursor-pointer transform hover:-translate-y-2 transition-all duration-300"
-          role="button"
-        >
-          <div className="flex justify-center mb-6">
-            <div className="bg-green-100 dark:bg-green-900/50 p-5 rounded-full group-hover:bg-green-200 dark:group-hover:bg-green-900 transition-colors">
-              <TruckIcon className="w-12 h-12 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Data Kendaraan</h2>
-          <p className="text-gray-500 dark:text-gray-400">
-            Kelola data master semua kendaraan, termasuk nomor polisi, nama sopir, sub cabang, dan status kendaraan.
-          </p>
-        </div>
+          color="green"
+        />
+        {currentUser?.username === 'admin' && (
+          <NavCard
+            title="Pengaturan"
+            description="Kelola akun pengguna yang dapat mengakses aplikasi ini."
+            icon={<SettingsIcon />}
+            onClick={() => onNavigate('settings')}
+            color="purple"
+          />
+        )}
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ export interface VehicleLog {
   purpose?: string;
 }
 
-export type AppView = 'home' | 'inventory' | 'vehicleData';
+export type AppView = 'home' | 'inventory' | 'vehicleData' | 'settings';
 
 export enum VehicleStatus {
   Delivery = 'Delivery',
@@ -21,4 +21,10 @@ export interface Vehicle {
   subBranch: string;
   driverName: string;
   status: VehicleStatus;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  password: string;
 }
