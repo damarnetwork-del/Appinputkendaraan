@@ -1,0 +1,5 @@
+{
+  "name": "Aplikasi Inventaris Kendaraan",
+  "description": "Sebuah aplikasi web untuk mencatat jam masuk dan jam keluar kendaraan, membantu mengelola inventaris kendaraan yang sedang parkir dan melihat riwayatnya.",
+  "requestFramePermissions": []
+}
